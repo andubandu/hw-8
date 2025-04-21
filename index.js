@@ -11,10 +11,29 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('public'));
 
-mongoose.connect(process.env.URL);
-const db = mongoose.connection;
-db.on('error', (error) => console.error(error));
-db.once('open', () => console.log('connected to mongodb'));
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000
+    });
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
+
+connectDB();
+
+mongoose.connection.on('error', err => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -23,6 +42,16 @@ app.get('/', (req, res) => {
 app.use('/films', filmsRoute);
 app.use('/directors', directorsRoute);
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ msg: "Something broke!" });
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+});
+
 app.listen(3000, () => {
-  console.log('running on http://localhost:3000');
+  console.log(`Server running on port 3000`);
 });

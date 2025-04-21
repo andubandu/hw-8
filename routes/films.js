@@ -17,7 +17,6 @@ const findPoster = async (title) => {
   }
 };
 
-// Get all films with director info and filters
 router.get('/', async (req, res) => {
   try {
     const { genre, year } = req.query;
@@ -48,7 +47,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create new film
 router.post('/new', validateDirector, async (req, res) => {
   try {
     const { error } = filmSchema.validate(req.body);
@@ -59,7 +57,6 @@ router.post('/new', validateDirector, async (req, res) => {
     const { title, year, genre, img } = req.body;
     const directorId = req.headers['director-id'];
 
-    // Check if director exists
     const director = await Director.findById(directorId);
     if (!director) {
       return res.status(404).json({ msg: "director not found" });
@@ -91,7 +88,6 @@ router.post('/new', validateDirector, async (req, res) => {
   }
 });
 
-// Update film
 router.put('/:id', async (req, res) => {
   try {
     if (Object.keys(req.body).length > 0) {
@@ -118,7 +114,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete film
 router.delete('/:id', async (req, res) => {
   try {
     const film = await Film.findById(req.params.id);
@@ -126,7 +121,6 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ msg: "film not found" });
     }
 
-    // Remove film from director's films array
     const director = await Director.findById(film.director);
     if (director) {
       director.films = director.films.filter(filmId => filmId.toString() !== req.params.id);

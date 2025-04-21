@@ -4,7 +4,6 @@ const Film = require("../mdl/filmSchema.js");
 const directorSchema = require('../validation/directorValidation');
 const router = express.Router();
 
-// Get all directors with their films
 router.get('/', async (req, res) => {
   try {
     const directors = await Director.find().populate('films');
@@ -15,7 +14,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get director by ID
 router.get('/:id', async (req, res) => {
   try {
     const director = await Director.findById(req.params.id).populate('films');
@@ -29,7 +27,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create new director
 router.post('/new', async (req, res) => {
   try {
     const { error } = directorSchema.validate(req.body);
@@ -52,7 +49,6 @@ router.post('/new', async (req, res) => {
   }
 });
 
-// Update director
 router.put('/:id', async (req, res) => {
   try {
     if (Object.keys(req.body).length > 0) {
@@ -79,7 +75,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete director and their films
 router.delete('/:id', async (req, res) => {
   try {
     const director = await Director.findById(req.params.id);
@@ -87,10 +82,8 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ msg: "director not found" });
     }
 
-    // Delete all films by this director
     await Film.deleteMany({ director: director._id });
 
-    // Delete the director
     await Director.findByIdAndDelete(req.params.id);
     
     res.json({ msg: "director and associated films deleted successfully" });
