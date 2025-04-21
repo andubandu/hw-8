@@ -1,7 +1,10 @@
 const express = require("express");
 const Director = require("../mdl/directorSchema.js");
+const Film = require("../mdl/filmSchema.js");
+const directorSchema = require('../validation/directorValidation');
 const router = express.Router();
 
+// Get all directors with their films
 router.get('/', async (req, res) => {
   try {
     const directors = await Director.find().populate('films');
@@ -12,6 +15,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get director by ID
 router.get('/:id', async (req, res) => {
   try {
     const director = await Director.findById(req.params.id).populate('films');
@@ -25,14 +29,15 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Create new director
 router.post('/new', async (req, res) => {
   try {
-    const { name, birthYear, nationality } = req.body;
-
-    if (!name || !birthYear || !nationality) {
-      return res.status(400).json({ msg: "all fields are required" });
+    const { error } = directorSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ msg: error.details[0].message });
     }
 
+    const { name, birthYear, nationality } = req.body;
     const director = new Director({
       name,
       birthYear,
@@ -47,8 +52,16 @@ router.post('/new', async (req, res) => {
   }
 });
 
+// Update director
 router.put('/:id', async (req, res) => {
   try {
+    if (Object.keys(req.body).length > 0) {
+      const { error } = directorSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({ msg: error.details[0].message });
+      }
+    }
+
     const director = await Director.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -66,13 +79,21 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Delete director and their films
 router.delete('/:id', async (req, res) => {
   try {
-    const director = await Director.findByIdAndDelete(req.params.id);
+    const director = await Director.findById(req.params.id);
     if (!director) {
       return res.status(404).json({ msg: "director not found" });
     }
-    res.json({ msg: "director deleted successfully" });
+
+    // Delete all films by this director
+    await Film.deleteMany({ director: director._id });
+
+    // Delete the director
+    await Director.findByIdAndDelete(req.params.id);
+    
+    res.json({ msg: "director and associated films deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "internal server error" });
